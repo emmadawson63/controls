@@ -1,0 +1,120 @@
+from visual import *
+from random import random
+
+'''Constants'''
+BotList=[]
+ChaosBotList=[]
+
+dBot= .340106   #meters
+rBot= .5*dBot
+hBot= .091948   #meters
+vBot= .33/100       #m/s
+
+rCirc = .6
+omega = .066/100
+
+dt=1
+
+'''Create Grid'''
+wall1= curve(pos=[(-10,10), (10,10)], color=color.green)
+wall2= curve(pos=[(10,10),(10,-10)], color=color.white)
+wall3= curve(pos=[(10,-10),(-10,-10)], color=color.red)
+wall4= curve(pos=[(-10,-10),(-10,10)], color=color.white)
+
+
+'''Functions'''
+def randomValue(low,high):
+    return low + (high-low)*random()
+
+def createBot(theta):
+    newBot = cylinder(radius = rBot,axis=(0,0,hBot),
+                      pos=(rCirc*cos(theta),rCirc*sin(theta),0),theta=theta,
+                      v= vector(vBot*cos(theta),vBot*sin(theta),0))
+    return newBot
+
+def createChaosBot(start):
+    newBot = cylinder(radius = rBot,axis=(0,0,2),color=color.red,
+                      pos=(5*cos(start),5*sin(start),0),st=start)
+    return newBot
+
+def createBotList():
+    theta=0
+    while theta < 2*pi:
+        BotList.append(createBot(theta))
+        theta=theta + (2*pi/10)
+        
+def createChaosBotList():
+    theta=0
+    while theta <2*pi:
+        start=theta
+        ChaosBotList.append(createChaosBot(start))
+        theta=theta + 2*pi/4
+        
+def moveBots():
+    i=0
+    while i < 10:
+        BotList[i].pos=BotList[i].pos+ BotList[i].v*(dt)
+        i=i+1
+
+def noiseBots(BotList):
+    for Bot in BotList:
+        Bot.theta=Bot.theta+randomValue(-0.349066,0.349066)
+        Bot.v= vector(vBot*cos(Bot.theta),vBot*sin(Bot.theta),0)
+        
+def flipBots(BotList):
+    for Bot in BotList:
+        Bot.theta=Bot.theta+ pi
+        Bot.v= vector(vBot*cos(Bot.theta),vBot*sin(Bot.theta),0)
+
+def checkBotCollisions():
+    i=0
+    while i < 10:
+        j=i+1
+        k=0
+        while j < 10:
+            checkCollision(BotList[i],BotList[j])
+            j=j+1
+        while k <4:
+            checkChaosCollision(BotList[i],ChaosBotList[k])
+            k=k+1
+        i=i+1
+    i=0               
+    
+def checkCollision(bot1,bot2):
+    r = bot1.pos - bot2.pos
+    if r.mag < dBot:
+        bot1.theta=bot1.theta+ pi
+        bot1.v= vector(vBot*cos(bot1.theta),vBot*sin(bot1.theta),0)      
+        bot2.theta=bot2.theta+ pi
+        bot2.v= vector(vBot*cos(bot2.theta),vBot*sin(bot2.theta),0)
+
+def checkChaosCollision(bot1,bot2):
+    r = bot1.pos - bot2.pos
+    if r.mag < dBot:
+        bot1.theta=bot1.theta+ pi
+        bot1.v= vector(vBot*cos(bot1.theta),vBot*sin(bot1.theta),0)      
+
+def moveChaosBots(ChaosBotList):
+    for bot in ChaosBotList:
+        bot.pos.y=5*sin((omega*t)+bot.st)
+        bot.pos.x=5*cos(omega*t+bot.st)                     
+        
+
+#Algorithm 1
+
+
+        
+'''Do the Things'''        
+createBotList()
+createChaosBotList()
+t=0
+while True:
+    rate(100)
+    moveBots()
+    moveChaosBots(ChaosBotList)
+    if t%500==0 and t != 0:
+        noiseBots(BotList)
+    if t%2000==0 and t !=0:
+        flipBots(BotList)
+    checkBotCollisions()
+    t=t+dt
